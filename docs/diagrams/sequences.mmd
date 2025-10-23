@@ -1,0 +1,66 @@
+%% Consolidated Mermaid sequence diagrams for Surechigai
+
+%% Auth signup (Google)
+sequenceDiagram
+  participant C as Client
+  participant S as Server
+  participant G as Google OAuth
+  participant DB as Database
+
+  rect rgb(240,248,255)
+  C->>S: POST /auth/signup { provider: "google", token }
+  S->>G: Validate token
+  G-->>S: token valid, userinfo (sub, email, name, picture)
+  alt existing oauth account
+    S->>DB: SELECT oauth_accounts where provider/sub
+    DB-->>S: found user_id
+    S->>DB: SELECT users where id = user_id
+    DB-->>S: user row
+  else new user
+    S->>DB: LOCK major_allocations
+    DB-->>S: locked
+    S->>DB: find or create major
+    DB-->>S: major found/created
+    S->>DB: increment last_minor
+    DB-->>S: assigned major/minor
+    S->>DB: INSERT users (major,minor,name,icon,mail)
+    DB-->>S: new user id
+    S->>DB: INSERT oauth_accounts (user_id,provider,provider_account_id)
+    DB-->>S: ok
+  end
+  S->>S: issue JWT accessToken + refreshToken
+  S-->>C: 201 AuthResponse { user, tokens }
+end
+
+
+%% Data: create encounter
+sequenceDiagram
+  participant C as Client
+  participant S as Server
+  participant DB as Database
+
+  C->>S: POST /data/encount (Authorization: Bearer) { major, minor, timestamp, message? }
+  S->>S: validate JWT -> get reporter_user_id
+  S->>DB: INSERT INTO encounters(reporter_user_id, target_major, target_minor, occurred_at, message)
+  DB-->>S: created encounter id
+  S->>DB: SELECT users WHERE major=target_major AND minor=target_minor LIMIT 1
+  DB-->>S: target user's profile (if any)
+  S-->>C: 201 EncountResponse { major, minor, timestamp, id, name?, icon?, github?, x?, mail?, message }
+
+
+%% Data: list my encounters
+sequenceDiagram
+  participant C2 as Client
+  participant S2 as Server
+  participant DB2 as Database
+
+  C2->>S2: GET /data/encount/me (Authorization: Bearer)
+  S2->>S2: validate JWT -> get user_id
+  S2->>DB2: SELECT * FROM encounters WHERE reporter_user_id = user_id ORDER BY occurred_at DESC LIMIT 100
+  DB2-->>S2: list of encounters
+  loop for each encounter
+    S2->>DB2: SELECT users WHERE major=enc.target_major AND minor=enc.target_minor LIMIT 1
+    DB2-->>S2: target profile
+  end
+  S2-->>C2: 200 [EncountResponse]
+

@@ -1,0 +1,367 @@
+openapi: '3.1.1'
+info:
+  title: API Title
+  version: '1.0'
+servers:
+  - url: http://localhost:3000/api
+tags:
+  - name: data
+    description: すれ違いデータ関連API
+  - name: auth
+    description: 認証関連API
+components:
+  schemas:
+    EncountKey:
+      type: object
+      properties:
+        major:
+          type: integer
+          description: major ID
+        minor:
+          type: integer
+          description: minor ID
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 形式のタイムスタンプ
+      required:
+        - major
+        - minor
+        - timestamp
+    EncountKeyArray:
+      type: array
+      items:
+        $ref: '#/components/schemas/EncountKey'
+    EncountResponse:
+      type: object
+      properties:
+        major:
+          type: integer
+        minor:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        icon:
+          type: string
+          format: uri
+          description: URL to an icon image
+        github:
+          type: string
+        x:
+          type: string
+        mail:
+          type: string
+        message:
+          type: string
+      required:
+        - major
+        - minor
+        - timestamp
+        - name
+        - icon
+        - id
+    EncountResponseArray:
+      type: array
+      items:
+        $ref: '#/components/schemas/EncountResponse'
+    EncountCreateRequest:
+      type: object
+      properties:
+        major:
+          type: integer
+        minor:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        message:
+          type: string
+      required:
+        - major
+        - minor
+        - timestamp
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        major:
+          type: integer
+          description: サーバーが割り当てる major
+        minor:
+          type: integer
+          description: サーバーが割り当てる minor
+        name:
+          type: string
+        mail:
+          type: string
+          description: optional
+        github:
+          type: string
+        x:
+          type: string
+        icon:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - major
+        - minor
+        - name
+        - icon
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+      required:
+        - accessToken
+    AuthSignupRequest:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: '認証プロバイダ (例: "google")'
+        token:
+          type: string
+          description: 'プロバイダ発行の ID token or access token'
+        icon:
+          type: string
+          format: uri
+        name:
+          type: string
+        github:
+          type: string
+        x:
+          type: string
+        mail:
+          type: string
+      required:
+        - provider
+        - token
+        - name
+        - icon
+    AuthSigninRequest:
+      type: object
+      properties:
+        provider:
+          type: string
+        token:
+          type: string
+      required:
+        - provider
+        - token
+    AuthUpdateRequest:
+      type: object
+      properties:
+        icon:
+          type: string
+          format: uri
+        name:
+          type: string
+        github:
+          type: string
+        x:
+          type: string
+        mail:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        tokens:
+          $ref: '#/components/schemas/AuthTokens'
+      required:
+        - user
+        - tokens
+  requestBodies:
+    EncountRequestBody:
+      description: 検索キーの配列。各要素は major, minor, timestamp を持つオブジェクトです。
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EncountKeyArray'
+          example:
+            - major: 1
+              minor: 2
+              timestamp: "2025-10-23T12:34:56Z"
+    SignupRequestBody:
+      description: ユーザ登録 (Google サインアップを想定)。provider と token を使って認証し、追加のプロフィール情報を保存します。
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthSignupRequest'
+    SigninRequestBody:
+      description: サインイン (Google など)。provider と token を使います。
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthSigninRequest'
+    UpdateRequestBody:
+      description: ユーザプロフィールの更新。認証（Bearer）を想定。
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthUpdateRequest'
+    EncountCreateRequestBody:
+      description: すれ違いデータを作成する。単一の要素を受け取る。
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EncountCreateRequest'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /public/data/encount:
+    get:
+      tags:
+        - data
+      summary: すれ違いデータの取得
+      description: すれ違いデータを(mejor/minor/timestamp)から取得します。
+      requestBody:
+        $ref: '#/components/requestBodies/EncountRequestBody'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncountResponseArray'
+              example:
+                - major: 1
+                  minor: 2
+                  timestamp: "2025-10-23T12:34:56Z"
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "ひつじ"
+                  icon: "https://example.com/icon.png"
+                  github: "oldsheeep3"
+                  x: "oldsheeep"
+                  mail: "hoge@huga.nya"
+                  message: "TSKaigi2025"
+
+  /data/encount:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - data
+      summary: すれ違いデータの作成
+      requestBody:
+        $ref: '#/components/requestBodies/EncountCreateRequestBody'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncountResponse'
+        '400':
+          description: Bad Request
+
+  /data/encount/me:
+    get:
+      tags:
+        - data
+      summary: 認証ユーザのすれ違いデータ一覧取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncountResponseArray'
+        '401':
+          description: Unauthorized
+
+  /auth/signup:
+    post:
+      tags:
+        - auth
+      summary: ユーザ登録（Google サインアップ等）
+      requestBody:
+        $ref: '#/components/requestBodies/SignupRequestBody'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad Request
+
+  /auth/signin:
+    post:
+      tags:
+        - auth
+      summary: サインイン（Google 等）
+      requestBody:
+        $ref: '#/components/requestBodies/SigninRequestBody'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Unauthorized
+
+  /auth/update:
+    put:
+      tags:
+        - auth
+      summary: ユーザプロフィール更新
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateRequestBody'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Unauthorized
+
+  /auth/me:
+    get:
+      tags:
+        - auth
+      summary: 認証ユーザ情報取得
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized

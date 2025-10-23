@@ -1,0 +1,51 @@
+%% Mermaid ER diagram for Surechigai DB
+%% Save as docs/diagrams/er.mmd
+
+erDiagram
+  USERS {
+    uuid id PK
+    integer major
+    integer minor
+    string name
+    string mail
+    string github
+    string x
+    string icon
+    timestamptz created_at
+  }
+  OAUTH_ACCOUNTS {
+    uuid id PK
+    uuid user_id FK
+    string provider
+    string provider_account_id
+    string provider_token
+    timestamptz created_at
+  }
+  REFRESH_TOKENS {
+    uuid id PK
+    uuid user_id FK
+    string token
+    timestamptz expires_at
+    timestamptz created_at
+  }
+  MAJOR_ALLOCATIONS {
+    integer major PK
+    integer last_minor
+  }
+  ENCOUNTERS {
+    uuid id PK
+    uuid reporter_user_id FK
+    integer target_major
+    integer target_minor
+    timestamptz occurred_at
+    string message
+    timestamptz created_at
+  }
+
+  USERS ||--o{ OAUTH_ACCOUNTS : "has"
+  USERS ||--o{ REFRESH_TOKENS : "has"
+  USERS ||--o{ ENCOUNTERS : "reports"
+  MAJOR_ALLOCATIONS ||--o{ USERS : "allocates"
+
+  %% Note: relation between ENCOUNTERS target_major/target_minor and USERS(major,minor) is a logical mapping (not enforced by FK)
+  ENCOUNTERS }o--|| USERS : "targets (via major/minor)"

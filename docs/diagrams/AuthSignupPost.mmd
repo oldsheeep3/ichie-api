@@ -1,0 +1,33 @@
+%% Mermaid sequence diagrams for key flows
+%% Save as docs/diagrams/sequences.mmd
+
+sequenceDiagram
+  participant C as Client
+  participant S as Server
+  participant G as Google OAuth
+  participant DB as Database
+
+  rect rgb(240,248,255)
+  C->>S: POST /auth/signup { provider: "google", token }
+  S->>G: Validate token
+  G-->>S: token valid, userinfo (sub, email, name, picture)
+  alt existing oauth account
+    S->>DB: SELECT oauth_accounts where provider/sub
+    DB-->>S: found user_id
+    S->>DB: SELECT users where id = user_id
+    DB-->>S: user row
+  else new user
+    S->>DB: LOCK major_allocations
+    DB-->>S: locked
+    S->>DB: find or create major
+    DB-->>S: major found/created
+    S->>DB: increment last_minor
+    DB-->>S: assigned major/minor
+    S->>DB: INSERT users (major,minor,name,icon,mail)
+    DB-->>S: new user id
+    S->>DB: INSERT oauth_accounts (user_id,provider,provider_account_id)
+    DB-->>S: ok
+  end
+  S->>S: issue JWT accessToken + refreshToken
+  S-->>C: 201 AuthResponse { user, tokens }
+end
