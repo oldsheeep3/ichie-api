@@ -23,7 +23,7 @@ sequenceDiagram
     DB-->>S: major found/created
     S->>DB: increment last_minor
     DB-->>S: assigned major/minor
-    S->>DB: INSERT users (major,minor,name,icon,mail)
+    S->>DB: INSERT users (name,icon,mail)
     DB-->>S: new user id
     S->>DB: INSERT oauth_accounts (user_id,provider,provider_account_id)
     DB-->>S: ok
@@ -39,13 +39,13 @@ sequenceDiagram
   participant S as Server
   participant DB as Database
 
-  C->>S: POST /data/encount (Authorization: Bearer) { major, minor, timestamp, message? }
-  S->>S: validate JWT -> get reporter_user_id
-  S->>DB: INSERT INTO encounters(reporter_user_id, target_major, target_minor, occurred_at, message)
+  C->>S: POST /data/encount (Authorization: Bearer) { message? }
+  S->>S: validate JWT -> get user_id
+  S->>DB: INSERT INTO encounters(id, user_id, message, createat)
   DB-->>S: created encounter id
-  S->>DB: SELECT users WHERE major=target_major AND minor=target_minor LIMIT 1
-  DB-->>S: target user's profile (if any)
-  S-->>C: 201 EncountResponse { major, minor, timestamp, id, name?, icon?, github?, x?, mail?, message }
+  S->>DB: SELECT users WHERE id=user_id LIMIT 1
+  DB-->>S: reporter's profile
+  S-->>C: 201 EncountResponse { id, user_id, message?, createat, name?, icon? }
 
 
 %% Data: list my encounters
@@ -56,11 +56,10 @@ sequenceDiagram
 
   C2->>S2: GET /data/encount/me (Authorization: Bearer)
   S2->>S2: validate JWT -> get user_id
-  S2->>DB2: SELECT * FROM encounters WHERE reporter_user_id = user_id ORDER BY occurred_at DESC LIMIT 100
+  S2->>DB2: SELECT * FROM encounters WHERE user_id = user_id ORDER BY createat DESC LIMIT 100
   DB2-->>S2: list of encounters
   loop for each encounter
-    S2->>DB2: SELECT users WHERE major=enc.target_major AND minor=enc.target_minor LIMIT 1
-    DB2-->>S2: target profile
+    %% reporter is the requesting user; no separate target lookup required
   end
   S2-->>C2: 200 [EncountResponse]
 

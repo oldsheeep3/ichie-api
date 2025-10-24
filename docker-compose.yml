@@ -1,45 +1,43 @@
 version: '3.8'
 
 services:
-  mysql:
-    build:
-      context: .
-      dockerfile: docker/mysql/Dockerfile
-      args:
-        - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-        - ADMIN_USERNAME=${ADMIN_USERNAME}
-        - ADMIN_DISPLAYNAME=${ADMIN_DISPLAYNAME}
-    image: surechigai-mysql:local
-    container_name: surechigai-mysql
+  postgres:
+    image: postgres:15-alpine
+    container_name: surechigai-postgres
     env_file:
       - .env
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-surechigai}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - mysql-data:/var/lib/mysql
+      - pgdata:/var/lib/postgresql/data
+      # initialize DB with our create_tables.sql on first run
+      - ./db/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql:ro
     ports:
-      - '${DB_PORT:-3306}:3306'
+      - '${DB_PORT:-5432}:5432'
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-surechigai}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  phpmyadmin:
-    image: phpmyadmin:5.2
-    container_name: surechigai-phpmyadmin
+  pgadmin:
+    image: dpage/pgadmin4:7
+    container_name: surechigai-pgadmin
     restart: unless-stopped
-    ports:
-      - '${PHPMYADMIN_PORT:-8080}:80'
+    env_file:
+      - .env
     environment:
-      PMA_HOST: mysql
-      PMA_PORT: '3306'
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - '${PGADMIN_PORT:-8080}:80'
     depends_on:
-      - mysql
+      - postgres
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
 
 volumes:
-  mysql-data:
-    name: surechigai_mysql_data
+  pgdata:
+  pgadmin-data:

@@ -9,10 +9,9 @@ sequenceDiagram
 
   C->>S: GET /data/encount/me (Authorization: Bearer)
   S->>S: validate JWT -> get user_id
-  S->>DB: SELECT * FROM encounters WHERE reporter_user_id = user_id ORDER BY occurred_at DESC LIMIT 100
+  S->>DB: SELECT * FROM encounters WHERE user_id = user_id ORDER BY createat DESC LIMIT 100
   DB-->>S: list of encounters
   loop for each encounter
-    S->>DB: SELECT users WHERE major=enc.target_major AND minor=enc.target_minor LIMIT 1
-    DB-->>S: target profile
+    %% reporter is the requesting user; no separate target lookup required
   end
   S-->>C: 200 [EncountResponse]

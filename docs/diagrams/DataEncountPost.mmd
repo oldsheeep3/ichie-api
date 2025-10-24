@@ -3,10 +3,10 @@ sequenceDiagram
   participant S as Server
   participant DB as Database
 
-  C->>S: POST /data/encount (Authorization: Bearer) {major,minor,timestamp,message?}
-  S->>S: validate JWT -> get reporter_user_id
-  S->>DB: INSERT INTO encounters(reporter_user_id, target_major, target_minor, occurred_at, message)
+  C->>S: POST /data/encount (Authorization: Bearer) { message? }
+  S->>S: validate JWT -> get user_id
+  S->>DB: INSERT INTO encounters(id, user_id, message, createat)
   DB-->>S: created encounter id
-  S->>DB: SELECT users WHERE major=target_major AND minor=target_minor LIMIT 1
-  DB-->>S: target user's profile (if any)
-  S-->>C: 201 EncountResponse { major, minor, timestamp, id, name?, icon?, github?, x?, mail?, message }
+  S->>DB: SELECT users WHERE id=user_id LIMIT 1
+  DB-->>S: reporter's profile
+  S-->>C: 201 EncountResponse { id, user_id, message?, createat, name?, icon? }

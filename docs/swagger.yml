@@ -35,37 +35,41 @@ components:
     EncountResponse:
       type: object
       properties:
-        major:
-          type: integer
-        minor:
-          type: integer
-        timestamp:
-          type: string
-          format: date-time
         id:
           type: string
           format: uuid
+        userId:
+          type: string
+          format: uuid
+        createAt:
+          type: string
+          format: date-time
+        deleteAt:
+          type: string
+          format: date-time
         name:
           type: string
         icon:
           type: string
           format: uri
           description: URL to an icon image
-        github:
-          type: string
         x:
           type: string
+          description: x id
+        github:
+          type: string
+          description: GitHub username
         mail:
           type: string
+          description: Email address
         message:
           type: string
       required:
-        - major
-        - minor
-        - timestamp
+        - id
+        - userId
+        - createAt
         - name
         - icon
-        - id
     EncountResponseArray:
       type: array
       items:
@@ -73,19 +77,8 @@ components:
     EncountCreateRequest:
       type: object
       properties:
-        major:
-          type: integer
-        minor:
-          type: integer
-        timestamp:
-          type: string
-          format: date-time
         message:
           type: string
-      required:
-        - major
-        - minor
-        - timestamp
     UserProfile:
       type: object
       properties:
@@ -94,10 +87,8 @@ components:
           format: uuid
         major:
           type: integer
-          description: サーバーが割り当てる major
         minor:
           type: integer
-          description: サーバーが割り当てる minor
         name:
           type: string
         mail:
@@ -115,8 +106,6 @@ components:
           format: date-time
       required:
         - id
-        - major
-        - minor
         - name
         - icon
     AuthTokens:
@@ -137,11 +126,11 @@ components:
         token:
           type: string
           description: 'プロバイダ発行の ID token or access token'
+        name:
+          type: string
         icon:
           type: string
           format: uri
-        name:
-          type: string
         github:
           type: string
         x:
@@ -248,17 +237,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EncountResponseArray'
-              example:
-                - major: 1
-                  minor: 2
-                  timestamp: "2025-10-23T12:34:56Z"
-                  id: "550e8400-e29b-41d4-a716-446655440000"
-                  name: "ひつじ"
-                  icon: "https://example.com/icon.png"
-                  github: "oldsheeep3"
-                  x: "oldsheeep"
-                  mail: "hoge@huga.nya"
-                  message: "TSKaigi2025"
 
   /data/encount:
     post:

@@ -4,8 +4,6 @@
 erDiagram
   USERS {
     uuid id PK
-    integer major
-    integer minor
     string name
     string mail
     string github
@@ -21,6 +19,7 @@ erDiagram
     string provider_token
     timestamptz created_at
   }
+  %% UNIQUE: (provider, provider_account_id)
   REFRESH_TOKENS {
     uuid id PK
     uuid user_id FK
@@ -28,24 +27,24 @@ erDiagram
     timestamptz expires_at
     timestamptz created_at
   }
-  MAJOR_ALLOCATIONS {
-    integer major PK
-    integer last_minor
+  IBEACON_DATAS {
+    %% one-to-one with USERS: use user_id as primary key to enforce one record per user
+    uuid user_id PK
+    integer major
+    integer minor
+    %% FK to USERS.id
+    %% UNIQUE: (major, minor) enforced in DDL to make (major,minor) identify a single user
   }
-  ENCOUNTERS {
+  MESSAGES {
     uuid id PK
-    uuid reporter_user_id FK
-    integer target_major
-    integer target_minor
-    timestamptz occurred_at
+    uuid user_id FK
     string message
     timestamptz created_at
+    timestamptz deleted_at
   }
 
   USERS ||--o{ OAUTH_ACCOUNTS : "has"
   USERS ||--o{ REFRESH_TOKENS : "has"
-  USERS ||--o{ ENCOUNTERS : "reports"
-  MAJOR_ALLOCATIONS ||--o{ USERS : "allocates"
+  USERS ||--o{ MESSAGES : "has"
+  USERS ||--|| IBEACON_DATAS : "has"
 
-  %% Note: relation between ENCOUNTERS target_major/target_minor and USERS(major,minor) is a logical mapping (not enforced by FK)
-  ENCOUNTERS }o--|| USERS : "targets (via major/minor)"

@@ -17,14 +17,12 @@ sequenceDiagram
     S->>DB: SELECT users where id = user_id
     DB-->>S: user row
   else new user
-    S->>DB: LOCK major_allocations
-    DB-->>S: locked
-    S->>DB: find or create major
-    DB-->>S: major found/created
-    S->>DB: increment last_minor
-    DB-->>S: assigned major/minor
-    S->>DB: INSERT users (major,minor,name,icon,mail)
+    S->>DB: find sel_major and sel_minor (allocation)
+    DB-->>S: selected major/minor
+    S->>DB: INSERT users (name,icon,mail)
     DB-->>S: new user id
+    S->>DB: INSERT major_allocations (user_id, major, minor)
+    DB-->>S: allocation saved
     S->>DB: INSERT oauth_accounts (user_id,provider,provider_account_id)
     DB-->>S: ok
   end
