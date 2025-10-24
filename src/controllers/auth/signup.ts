@@ -17,13 +17,17 @@ export default async function signupHandler(req: Request, res: Response) {
 
   // determine provider_account_id (for google we verify token and use `sub`)
   let providerAccountId = body.token;
-  if (body.provider === 'google') {
+  switch (body.provider) {
+  case 'google':
     try {
       const payload = await verifyGoogleIdToken(body.token);
       providerAccountId = payload.sub;
     } catch (e) {
       return res.status(401).json({ error: 'Invalid Google token' });
     }
+    break;
+  default:
+    return res.status(400).json({ error: 'Unsupported provider' });
   }
 
   // check existing oauth account
