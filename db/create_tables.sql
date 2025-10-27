@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS oauth_accounts (
   provider_account_id text NOT NULL,
   provider_token text,
   created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (provider, provider_account_id),
+  UNIQUE (provider, provider_account_id)
   -- allow one user to have multiple oauth_accounts (one-to-many)
 );
 
@@ -50,8 +50,8 @@ CREATE TABLE IF NOT EXISTS ibeacon_datas (
 -- Index on major/minor to support lookups by beacon values.
 CREATE INDEX IF NOT EXISTS idx_ibeacon_major_minor ON ibeacon_datas(major, minor);
 -- Enforce that (major, minor) uniquely identifies a user and vice versa (bijection).
-ALTER TABLE IF EXISTS ibeacon_datas
-  ADD CONSTRAINT IF NOT EXISTS ux_ibeacon_major_minor UNIQUE (major, minor);
+-- Use a unique index to ensure compatibility across Postgres versions.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ibeacon_major_minor ON ibeacon_datas (major, minor);
 
 -- MESSAGES (per user)
 CREATE TABLE IF NOT EXISTS messages (

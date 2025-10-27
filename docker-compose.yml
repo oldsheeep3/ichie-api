@@ -1,43 +1,46 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: surechigai-postgres
+  mysql:
+    image: mysql:8.0
+    container_name: surechigai-mysql
     env_file:
       - .env
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-surechigai}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-surechigai}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_USER: ${MYSQL_USER:-surechigai}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-surechigai}
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      # initialize DB with our create_tables.sql on first run
-      - ./db/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql:ro
+      - mysql_data:/var/lib/mysql
+      # initialize DB with our create_tables_mysql.sql on first run
+      - ./db/create_tables_mysql.sql:/docker-entrypoint-initdb.d/create_tables.sql:ro
     ports:
-      - '${DB_PORT:-5432}:5432'
+      - '${DB_PORT:-3306}:3306'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-surechigai}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u ${MYSQL_USER:-surechigai} -p${MYSQL_PASSWORD:-surechigai}" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4:7
-    container_name: surechigai-pgadmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: surechigai-phpmyadmin
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@local}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER:-surechigai}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-surechigai}
     ports:
-      - '${PGADMIN_PORT:-8080}:80'
+      - '${PHPMYADMIN_PORT:-8080}:80'
     depends_on:
-      - postgres
+      - mysql
     volumes:
-      - pgadmin-data:/var/lib/pgadmin
+      - phpmyadmin_data:/etc/phpmyadmin
 
 volumes:
-  pgdata:
-  pgadmin-data:
+  mysql_data:
+  phpmyadmin_data:
