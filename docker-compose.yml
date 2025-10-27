@@ -35,7 +35,7 @@ services:
       PMA_USER: ${MYSQL_USER:-surechigai}
       PMA_PASSWORD: ${MYSQL_PASSWORD:-surechigai}
     ports:
-      - '${PHPMYADMIN_PORT:-8080}:80'
+      - '${PHPMYADMIN_PORT:-8816}:80'
     depends_on:
       - mysql
     volumes:
